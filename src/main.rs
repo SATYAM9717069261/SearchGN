@@ -10,10 +10,13 @@ struct WordStartAt{
     start_at:Vec<u32>
 }
 impl WordStartAt{
-    fn new() -> Self{
+    fn new(start_at:u32) -> Self{
         WordStartAt{
-            start_at: Vec::new()
+            start_at: vec![start_at]
         }
+    }
+    fn push(&mut self,start_at:u32){
+        self.start_at.push(start_at);
     }
 }
 
@@ -22,7 +25,7 @@ struct Posting{
     name:String,
     freq:u32,
     line_no:Vec<u32>,
-    start_at: Vec<WordStartAt>,
+    word_start_from: Vec<WordStartAt>,
     /*
      * Postiong{
      *  fileName,
@@ -41,7 +44,7 @@ impl Posting{
             name:name,
             freq:freq,
             line_no: Vec::new(),
-            start_at: Vec::new()
+            word_start_from: Vec::new()
         }
     }
 }
@@ -59,13 +62,36 @@ impl InvertedIndex{
     fn insert(&mut self,key:String, posting:&mut Posting, line_number:u32, word_start_at:u32){
         match self.map.get_mut(&key){
             Some(details) => {
-             //   todo!();
+                let mut post_iter = details.iter_mut();
+                let mut fileFound:bool = false;
+                while let Some(post) = post_iter.next(){
+                    post.freq+=1;
+                    if post.name == posting.name{ // matched file
+                       fileFound = true;
+                       let mut line_found = false;
+                       for (idx,&line) in post.line_no.iter().enumerate(){
+                           if line == line_number{
+                               line_found = true;
+                               post.word_start_from[idx].push(word_start_at);
+                           }
+                       }
+                       if line_found == false{
+                           post.line_no.push(line_number);
+                           post.word_start_from.push(WordStartAt::new(word_start_at));
+                        }
+                    }
+                }
+                if fileFound == false{
+                    posting.line_no.push(line_number);
+                    let word_at = WordStartAt::new(word_start_at);
+                    posting.word_start_from.push(word_at);
+                    details.push(posting.clone());
+                }
             },
             None => {
                 posting.line_no.push(line_number);
-                let mut word_start = WordStartAt::new();
-                word_start.start_at = vec![word_start_at];
-                posting.start_at.push(word_start);
+                let word_at = WordStartAt::new(word_start_at);
+                posting.word_start_from.push(word_at);
                 self.map.insert(key,vec![posting.clone()]);
             }
         }
