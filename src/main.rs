@@ -5,12 +5,19 @@ use std::collections::HashMap;
 
 const path:&str = "./dataSet/";
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 struct WordStartAt{
     start_at:Vec<u32>
 }
+impl WordStartAt{
+    fn new() -> Self{
+        WordStartAt{
+            start_at: Vec::new()
+        }
+    }
+}
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 struct Posting{
     name:String,
     freq:u32,
@@ -38,29 +45,35 @@ impl Posting{
         }
     }
 }
-
-struct Inverted_Index{
+#[derive(Debug)]
+struct InvertedIndex{
     map: HashMap<String,Vec<Posting>>
 }
 
-impl Inverted_Index{
+impl InvertedIndex{
     fn new()->Self{
-        Inverted_Index{
+        InvertedIndex{
             map: HashMap::new()
         }
     }
     fn insert(&mut self,key:String, posting:&mut Posting, line_number:u32, word_start_at:u32){
-        /**
-         * search word in hashmap
-         * if found -> check file -> if found
-         */
-
-        println!("word => {}",key);
+        match self.map.get_mut(&key){
+            Some(details) => {
+             //   todo!();
+            },
+            None => {
+                posting.line_no.push(line_number);
+                let mut word_start = WordStartAt::new();
+                word_start.start_at = vec![word_start_at];
+                posting.start_at.push(word_start);
+                self.map.insert(key,vec![posting.clone()]);
+            }
+        }
     }
 }
 
 fn main() -> ExitCode {
-    let mut inverted_idx:Inverted_Index = Inverted_Index::new();
+    let mut inverted_idx:InvertedIndex = InvertedIndex::new();
     let mut dir_iter = fs::read_dir(path).expect("Dir Error");
 
     while let Some(entry) = dir_iter.next(){
@@ -78,11 +91,12 @@ fn main() -> ExitCode {
             Err(_) =>{ }
         }
     }
+    println!(" {:?}",inverted_idx);
     ExitCode::SUCCESS
 }
 
 
-fn insert_token(file_path:&std::path::Path ,inverted_idx: &mut Inverted_Index)->io::Result<()>{
+fn insert_token(file_path:&std::path::Path ,inverted_idx: &mut InvertedIndex)->io::Result<()>{
 
     let mut file = File::open(file_path)?;
     let mut buffer = [0u8; 1024];
@@ -104,7 +118,6 @@ fn insert_token(file_path:&std::path::Path ,inverted_idx: &mut Inverted_Index)->
                 bytes_read_count+=1;
                 match byte{
                     b' ' => {
-                        println!("word => {}",word.get());
                         let key = word.get();
                         inverted_idx.insert(key,&mut posting,line_number,word_start_at);
                         word.clear();
@@ -119,7 +132,6 @@ fn insert_token(file_path:&std::path::Path ,inverted_idx: &mut Inverted_Index)->
                     }
                 }
             }
-
         }
     }
     Ok(())
