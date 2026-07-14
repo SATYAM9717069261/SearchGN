@@ -1,16 +1,16 @@
 use crate::indexer::inverted_index::InvertedIndex;
 use crate::reader::file_reader::{insert_token};
-use std::fs;
+use std::{fs,io};
 
 //Result->OK(),Error, Option -> Some(), None
 
-pub fn read_dir(path:String,inverted_idx:&mut InvertedIndex) -> Result<&'static str,io::Error>{
+pub fn read_dir(path:String,index:&mut InvertedIndex) -> Result<&'static str,io::Error>{
     let mut dir_iter = fs::read_dir(path).expect("Dir Error");
 
     while let Some(entry) = dir_iter.next(){
         match entry{
             Ok(file) => {
-                match insert_token(&file.path(),&mut inverted_idx){
+                match insert_token(&file.path(),index){
                     Ok(()) => {
                         println!("SUCCESS :: {:?}",file.path());
                     },

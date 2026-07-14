@@ -8,7 +8,7 @@ impl WordStartAt{
             start_at: vec![start_at]
         }
     }
-    fn push(&mut self,start_at:u32){
+    pub fn push(&mut self,start_at:u32){
         self.start_at.push(start_at);
     }
 }

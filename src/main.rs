@@ -13,7 +13,10 @@ const path:&str = "./dataSet/";
 
 fn main() -> ExitCode {
     let mut inverted_idx:InvertedIndex = InvertedIndex::new();
-    read_dir(path.to_string(),&mut inverted_idx);
+    if let Err(err) = read_dir(path.to_string(),&mut inverted_idx){
+        println!("{:?}",err);
+        return ExitCode::FAILURE;
+    }
     println!(" {:?}",inverted_idx);
     ExitCode::SUCCESS
 }

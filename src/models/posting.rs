@@ -2,10 +2,10 @@ use crate::models::word_start_at::WordStartAt;
 
 #[derive(Debug,Clone)]
 pub struct Posting{
-    name:String,
-    freq:u32,
+    document_id:String,
+    frequency:u32,
     line_no:Vec<u32>,
-    word_start_from: Vec<WordStartAt>,
+    positions: Vec<WordStartAt>,
     /*
      * Postiong{
      *  fileName,
@@ -21,10 +21,41 @@ pub struct Posting{
 impl Posting{
     pub fn new(name:String,freq:u32)->Self{
         Posting{
-            name:name,
-            freq:freq,
+            document_id:name,
+            frequency:freq,
             line_no: Vec::new(),
-            word_start_from: Vec::new()
+            positions: Vec::new()
         }
+    }
+    pub fn get_document_id(&self)->&str{
+        &self.document_id
+    }
+    pub fn get_line_no(&self) -> &Vec<u32>{
+        &self.line_no
+    }
+
+    pub fn update_frequency(&mut self){
+        self.frequency += 1;
+    }
+
+    pub fn update_document_id(&mut self, id:String){
+        self.document_id = id;
+    }
+
+    pub fn push_new_line(&mut self, line_number:u32){
+        self.line_no.push(line_number);
+    }
+
+    pub fn push_new_positions(&mut self, word_start_at:WordStartAt){
+        self.positions.push(word_start_at);
+    }
+
+    pub fn update_position_at(&mut self,idx:usize, start_at:u32){
+        self.positions[idx].push(start_at);
+    }
+
+    pub fn add_occurrence( &mut self, line: u32, position: u32,) {
+        self.push_new_line(line);
+        self.push_new_positions( WordStartAt::new(position),);
     }
 }
