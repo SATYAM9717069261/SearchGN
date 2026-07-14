@@ -1,6 +1,8 @@
 use serde::{Serialize, Deserialize};
 
 use crate::models::posting::Posting;
+use crate::models::word_start_at::WordStartAt;
+
 use std::collections::HashMap;
 
 #[derive(Debug,Serialize, Deserialize)]
@@ -14,12 +16,13 @@ impl InvertedIndex{
             map: HashMap::new()
         }
     }
-
-    pub fn add_term(self:&mut InvertedIndex ,key:String, posting:&mut Posting, line_number:u32, word_start_at:u32){
-
+    pub fn get_len(&self) ->usize{
+        self.map.len()
+    }
+    pub fn add_term(self:&mut InvertedIndex ,key:String, f_name:&str, line_number:u32, word_start_at:u32){
         match self.map.get_mut(&key){
             Some(details) => {
-                if let Some(post) = details.iter_mut().find(|document| document.get_document_id() == posting.get_document_id()){
+                if let Some(post) = details.iter_mut().find(|document| document.get_document_id() == f_name){
                     let idx = post.get_line_no().iter().position(|&line| line == line_number);
                     if let Some(idx) = idx {
                         //if every thing match [document_id, line_no] only need to push where you
@@ -31,15 +34,33 @@ impl InvertedIndex{
                     }
                 }else{
                     //if document_id not match
-                    posting.add_occurrence(line_number,word_start_at);
-                    details.push(posting.clone());
+                    let mut line_no_list = vec![];
+                    line_no_list.push(line_number);
+                    let mut word_start_at_list = vec![];
+                    word_start_at_list.push(WordStartAt::new(word_start_at));
+                    let mut posting = Posting::new(
+                        f_name.to_string(),
+                        1,
+                        line_no_list,
+                        word_start_at_list
+                    );
+                    details.push(posting);
                 }
             },
             None => {
                 // if key not exist in hashMap then insert new key
                 if key != ""{
-                    posting.add_occurrence(line_number,word_start_at);
-                    self.map.insert(key,vec![posting.clone()]);
+                    let mut line_no_list = vec![];
+                    line_no_list.push(line_number);
+                    let mut word_start_at_list = vec![];
+                    word_start_at_list.push(WordStartAt::new(word_start_at));
+                    let mut posting = Posting::new(
+                        f_name.to_string(),
+                        1,
+                        line_no_list,
+                        word_start_at_list
+                    );
+                    self.map.insert(key,vec![posting]);
                 }
             }
         }

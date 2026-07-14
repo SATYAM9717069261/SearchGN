@@ -20,12 +20,12 @@ pub struct Posting{
      */
 }
 impl Posting{
-    pub fn new(name:String,freq:u32)->Self{
+    pub fn new(name:String,freq:u32,line_no:Vec<u32>,pos:Vec<WordStartAt>)->Self{
         Posting{
             document_id:name,
             frequency:freq,
-            line_no: Vec::new(),
-            positions: Vec::new()
+            line_no: line_no,
+            positions: pos
         }
     }
     pub fn get_document_id(&self)->&str{

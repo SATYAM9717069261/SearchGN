@@ -11,9 +11,8 @@ pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::
     let mut buffer = [0u8; 1024];
 
     if let Some(f_name)= file_path.to_str(){
-        let mut document = Posting::new(f_name.to_string(),0);
         let mut word:Word = Word::new();
-
+        let mut word_count = 0;
         let mut line:u32 = 0;
         let mut bytes_read_count:u32 = 0;
         let mut position = 0;
@@ -28,13 +27,15 @@ pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::
                 match byte{
                     b' ' => {
                         let term = word.get();
-                        index.add_term(term,&mut document.clone(),line,position);
+                        index.add_term(term,f_name,line,position);
+                        word_count+=1;
                         word.clear();
                         position = bytes_read_count+1;
                     },
                     b'\n' => {
                         let term = word.get();
-                        index.add_term(term,&mut document.clone(),line,position);
+                        index.add_term(term,f_name,line,position);
+                        word_count+=1;
                         word.clear();
                         line+=1;
                         bytes_read_count= 0;
@@ -44,6 +45,14 @@ pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::
                         word.push(*byte as char);
                     }
                 }
+            }
+
+            if (word_count % 10000) == 0{
+                println!(
+                    "Processed {} words | Unique terms: {}",
+                    word_count,
+                    index.get_len()
+                )
             }
         }
     }

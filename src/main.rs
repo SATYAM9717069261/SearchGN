@@ -9,7 +9,7 @@ use reader::directory_reader::{read_dir};
 use indexer::inverted_index::{InvertedIndex};
 use std::process::ExitCode;
 
-const PATH:&str = "./test/";
+const PATH:&str = "./dataSet/";
 
 fn main() -> ExitCode {
     let mut inverted_idx:InvertedIndex = InvertedIndex::new();
