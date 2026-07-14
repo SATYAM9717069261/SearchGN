@@ -28,13 +28,17 @@ pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::
                 match byte{
                     b' ' => {
                         let term = word.get();
-                        index.add_term(term,&mut document,line,position);
+                        index.add_term(term,&mut document.clone(),line,position);
                         word.clear();
                         position = bytes_read_count+1;
                     },
                     b'\n' => {
+                        let term = word.get();
+                        index.add_term(term,&mut document.clone(),line,position);
+                        word.clear();
                         line+=1;
-                        // push in hash
+                        bytes_read_count= 0;
+                        position = 0;
                     },
                     _ => {
                         word.push(*byte as char);

@@ -1,6 +1,7 @@
+use serde::{Serialize, Deserialize};
 use crate::models::word_start_at::WordStartAt;
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,Serialize, Deserialize)]
 pub struct Posting{
     document_id:String,
     frequency:u32,
@@ -33,13 +34,8 @@ impl Posting{
     pub fn get_line_no(&self) -> &Vec<u32>{
         &self.line_no
     }
-
     pub fn update_frequency(&mut self){
         self.frequency += 1;
-    }
-
-    pub fn update_document_id(&mut self, id:String){
-        self.document_id = id;
     }
 
     pub fn push_new_line(&mut self, line_number:u32){
@@ -51,10 +47,12 @@ impl Posting{
     }
 
     pub fn update_position_at(&mut self,idx:usize, start_at:u32){
+        self.frequency += 1;
         self.positions[idx].push(start_at);
     }
 
     pub fn add_occurrence( &mut self, line: u32, position: u32,) {
+        self.frequency += 1;
         self.push_new_line(line);
         self.push_new_positions( WordStartAt::new(position),);
     }

@@ -1,9 +1,9 @@
-use crate::models::posting::Posting;
-use crate::models::word_start_at::WordStartAt;
-use std::collections::HashMap;
-use std::io;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug)]
+use crate::models::posting::Posting;
+use std::collections::HashMap;
+
+#[derive(Debug,Serialize, Deserialize)]
 pub struct InvertedIndex{
     map: HashMap<String,Vec<Posting>>
 }
@@ -16,34 +16,31 @@ impl InvertedIndex{
     }
 
     pub fn add_term(self:&mut InvertedIndex ,key:String, posting:&mut Posting, line_number:u32, word_start_at:u32){
+
         match self.map.get_mut(&key){
             Some(details) => {
-                let mut post_iter = details.iter_mut();
-                let mut fileFound:bool = false;
-                while let Some(post) = post_iter.next(){
-
-                    if post.get_document_id() == posting.get_document_id(){ // matched file
-                        post.update_frequency();
-                        fileFound = true;
-
-                        let idx = post.get_line_no().iter().position(|&line| line == line_number);
-                        if let Some(idx) = idx {
-                            post.update_position_at(idx, word_start_at);
-                        } else {
-                            post.push_new_line(line_number);
-                            post.push_new_positions(WordStartAt::new(word_start_at));
-                        }
+                if let Some(post) = details.iter_mut().find(|document| document.get_document_id() == posting.get_document_id()){
+                    let idx = post.get_line_no().iter().position(|&line| line == line_number);
+                    if let Some(idx) = idx {
+                        //if every thing match [document_id, line_no] only need to push where you
+                        //should start reading
+                        post.update_position_at(idx, word_start_at);
+                    } else {
+                        // if line number not match
+                        post.add_occurrence(line_number,word_start_at);
                     }
-                }
-                if fileFound == false{
+                }else{
+                    //if document_id not match
                     posting.add_occurrence(line_number,word_start_at);
                     details.push(posting.clone());
                 }
             },
             None => {
-
-                posting.add_occurrence(line_number,word_start_at);
-                self.map.insert(key,vec![posting.clone()]);
+                // if key not exist in hashMap then insert new key
+                if key != ""{
+                    posting.add_occurrence(line_number,word_start_at);
+                    self.map.insert(key,vec![posting.clone()]);
+                }
             }
         }
     }
