@@ -1,6 +1,4 @@
-use crate::models::posting::Posting;
 use crate::indexer::word::Word;
-
 use crate::indexer::inverted_index::InvertedIndex;
 
 use std::io::{self,Read};
@@ -8,11 +6,12 @@ use std::fs::{File};
 
 pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::Result<()>{
     let mut file = File::open(file_path)?;
-    let mut buffer = [0u8; 1024];
+    let mut buffer = [0u8; 64*1024]; // 64 Kbytes
 
     if let Some(f_name)= file_path.to_str(){
+        println!("::::::::::::::: {} :::::::::::::::",f_name);
+        let doc_idx = index.add_document(f_name)?;
         let mut word:Word = Word::new();
-        let mut word_count = 0;
         let mut line:u32 = 0;
         let mut bytes_read_count:u32 = 0;
         let mut position = 0;
@@ -27,15 +26,13 @@ pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::
                 match byte{
                     b' ' => {
                         let term = word.get();
-                        index.add_term(term,f_name,line,position);
-                        word_count+=1;
+                        index.add_term(term,doc_idx,line,position);
                         word.clear();
                         position = bytes_read_count+1;
                     },
                     b'\n' => {
                         let term = word.get();
-                        index.add_term(term,f_name,line,position);
-                        word_count+=1;
+                        index.add_term(term,doc_idx,line,position);
                         word.clear();
                         line+=1;
                         bytes_read_count= 0;
@@ -47,13 +44,8 @@ pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::
                 }
             }
 
-            if (word_count % 10000) == 0{
-                println!(
-                    "Processed {} words | Unique terms: {}",
-                    word_count,
-                    index.get_len()
-                )
-            }
+
+
         }
     }
     Ok(())

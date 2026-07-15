@@ -1,3 +1,5 @@
+use std::mem;
+
 pub struct Word{
     _word:String
 }
@@ -13,9 +15,7 @@ impl Word{
         self._word.push(ch);
     }
     pub fn get(&mut self)->String{
-        let tmp = self._word.clone();
-        self._word.clear();
-        return tmp;
+        mem::take(&mut self._word)
     }
     pub fn clear(&mut self){
         self._word.clear();
