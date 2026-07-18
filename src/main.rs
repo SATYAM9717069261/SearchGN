@@ -9,7 +9,7 @@ use indexer::inverted_index::{InvertedIndex};
 
 use query::lexer::Lexer;
 use query::parser::parse_token_to_ast;
-use query::evaluator::evaluate;
+use query::evaluator::{evaluate, print_posting_list};
 
 use std::process::ExitCode;
 use std::io::{stdin};
@@ -35,7 +35,7 @@ fn main() -> ExitCode {
             let lexer = Lexer::new();
             if let Ok(rtn) = parse_token_to_ast(&lexer.tokenizer(&query)){
                 let eval_rtn = evaluate(&rtn,&inverted_idx);
-                println!("query Rtn =>  {:?} ",eval_rtn);
+                print_posting_list(&eval_rtn,&inverted_idx);
             }
         }
     }

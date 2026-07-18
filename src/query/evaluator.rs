@@ -20,7 +20,7 @@ fn build_universe(index: &InvertedIndex) -> PostingList {
 
 impl PostingList{
 
-    pub fn intesection(&self,list2:&PostingList) -> PostingList{
+    pub fn intersection(&self,list2:&PostingList) -> PostingList{
         let mut result = PostingList{postings: Vec::new()};
         let mut idx_l1 = 0; // self.postings
         let mut idx_l2 = 0;
@@ -122,7 +122,7 @@ pub fn evaluate(node:&AstNode,idx: &InvertedIndex ) ->PostingList {
             let right = evaluate(right,idx);
 
             match operator{
-                Operator::And => left.intesection(&right),
+                Operator::And => left.intersection(&right),
                 Operator::Or => left.union(&right),
                 _ => unreachable!()
             }
@@ -139,3 +139,10 @@ pub fn evaluate(node:&AstNode,idx: &InvertedIndex ) ->PostingList {
         }
     }
 }
+
+pub fn print_posting_list(list: &PostingList, index: &InvertedIndex) {
+    for posting in &list.postings {
+        println!("{}", index.get_docuemnt(posting.get_document_id()));
+    }
+}
+
