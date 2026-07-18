@@ -19,4 +19,6 @@ impl PostingList{
 
 pub fn evaluate(node:AstNode,idx: InvertedIndex ) ->Vec<usize> {
     // Ast =>  Not(And(Rust,Or(File,Name)))
+    match node{
+    }
 }

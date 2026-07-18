@@ -4,7 +4,7 @@ use crate::models::posting::Posting;
 use crate::models::word_start_at::WordStartAt;
 
 use std::collections::HashMap;
-use std::io::{self,Read};
+use std::io::{self};
 
 #[derive(Debug,Serialize, Deserialize)]
 pub struct InvertedIndex{
@@ -36,6 +36,13 @@ impl InvertedIndex{
 
     pub fn get_docuemnt(&self, idx:usize) -> &str{
         self.documents[idx].as_str()
+    }
+
+    pub fn get_all_document(&self) ->&Vec<String>{
+        &self.documents
+    }
+    pub fn get_all_words(&self) -> Vec<String>{
+        self.map.clone().into_keys().collect()
     }
 
     pub fn add_term(self:&mut InvertedIndex ,key:String, f_idx:usize, line_number:u32, word_start_at:u32){

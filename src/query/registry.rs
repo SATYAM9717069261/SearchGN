@@ -1,16 +1,9 @@
-/*
- * let registry = KeywordRegistry::new();
- * registry.register("AND", Operator::And);
- * registry.register("OR", Operator::Or);
- * registry.register("NOT", Operator::Not);
- * registry.lookup(word)
- *  in lexer
- *          => if word know then create Operator
- *          => otherwiae if Word
- */
-use super::operator::Operator;
+use super::operator::StackItem;
+
+use std::collections::HashMap;
+
 pub struct KeywordRegistry{
-    operator_map:HashMap<&'static str, Operator>
+    operator_map:HashMap<&'static str, StackItem>
 }
 
 impl KeywordRegistry{
@@ -20,17 +13,12 @@ impl KeywordRegistry{
         }
     }
 
-    pub fn register(&mut self, word:&'static str, op:Operator){
+    pub fn register(&mut self, word:&'static str, op:StackItem){
         self.operator_map.insert(word,op);
     }
 
-    pub fn lookup(&self, word:&str) -> Option<&Operator>{
+    pub fn lookup(&self, word:&str) -> Option<&StackItem>{
         self.operator_map.get(word)
     }
 }
-
-
-
-
-
 

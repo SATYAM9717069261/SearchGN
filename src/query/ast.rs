@@ -1,5 +1,4 @@
 use crate::query::operator::Operator;
-use crate::query::operator::OperatorType::{Unary,Binary};
 
 #[derive(Debug, Clone)]
 pub enum AstNode{

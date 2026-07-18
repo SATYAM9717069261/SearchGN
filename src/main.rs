@@ -1,10 +1,15 @@
 mod reader;
 mod indexer;
 mod models;
-mod error;
+
+mod query;
+
 
 use reader::directory_reader::{read_dir};
 use indexer::inverted_index::{InvertedIndex};
+
+use query::lexer::Lexer;
+
 use std::process::ExitCode;
 use std::io::{stdin};
 
@@ -16,23 +21,19 @@ fn main() -> ExitCode {
         println!("{:?}",err);
         return ExitCode::FAILURE;
     }
-    let json = serde_json::to_string(&inverted_idx).unwrap();
-    println!("{}", json);
+    //let json = serde_json::to_string(&inverted_idx).unwrap();
+    println!("list of Word :{:?}", inverted_idx.get_all_words());
+
     loop{
         let mut inp:String = String::new();
         stdin().read_line(&mut inp).expect("IO Error");
-        let search_word = inp.trim().parse::<String>().expect("Parsing Error");
-        if search_word == "exit"{
+        let query = inp.trim().parse::<String>().expect("Parsing Error");
+        if query == "exit"{
             break;
         }else{
-            if let Ok(details) = inverted_idx.search_word(&search_word){
-                for detail  in details.iter(){
-                    let idx = detail.get_document_id();
-                    println!(" => {:?}",inverted_idx.get_docuemnt(idx));
-                }
-            }else{
-                println!("{} not found in database",search_word);
-            }
+            let lexer = Lexer::new();
+            let rtn = lexer.tokenizer(&query);
+            println!("query Rtn =>  {:?} ",rtn);
         }
     }
     ExitCode::SUCCESS

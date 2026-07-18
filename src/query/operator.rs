@@ -1,6 +1,11 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum StackItem{
     Operator(Operator),
+    Symbol(Symbol),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Symbol{
     LeftParen,
     RightParen,
 }
