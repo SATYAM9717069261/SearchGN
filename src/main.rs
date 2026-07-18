@@ -9,6 +9,7 @@ use reader::directory_reader::{read_dir};
 use indexer::inverted_index::{InvertedIndex};
 
 use query::lexer::Lexer;
+use query::parser::parse_token_to_ast;
 
 use std::process::ExitCode;
 use std::io::{stdin};
@@ -32,7 +33,7 @@ fn main() -> ExitCode {
             break;
         }else{
             let lexer = Lexer::new();
-            let rtn = lexer.tokenizer(&query);
+            let rtn = parse_token_to_ast(&lexer.tokenizer(&query));
             println!("query Rtn =>  {:?} ",rtn);
         }
     }
