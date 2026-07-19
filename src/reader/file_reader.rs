@@ -20,17 +20,17 @@ pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::
             if n == 0{
                 break;
             }
-
-            for byte in &buffer[..n]{
+            let content = String::from_utf8_lossy(&buffer[..n]);
+            for byte in content.chars(){
                 bytes_read_count+=1;
                 match byte{
-                    b' ' => {
+                    ' ' => {
                         let term = word.get();
                         index.add_term(term,doc_idx,line,position);
                         word.clear();
                         position = bytes_read_count+1;
                     },
-                    b'\n' => {
+                    '\n' => {
                         let term = word.get();
                         index.add_term(term,doc_idx,line,position);
                         word.clear();
@@ -39,12 +39,10 @@ pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::
                         position = 0;
                     },
                     _ => {
-                        word.push(*byte as char);
+                       word.push(byte);
                     }
                 }
             }
-
-
 
         }
     }

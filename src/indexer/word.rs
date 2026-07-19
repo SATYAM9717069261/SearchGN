@@ -12,7 +12,9 @@ impl Word{
     }
     pub fn push(&mut self, ch:char){
         // filter pending
-        self._word.push(ch.to_ascii_lowercase());
+        if Self::is_word_char(ch){
+            self._word.push(ch.to_ascii_lowercase());
+        }
     }
 
     pub fn get(&mut self)->String{
