@@ -1,4 +1,6 @@
 /target
 /dataSet
 output*
+*.zip
+*.DS_Store
 
