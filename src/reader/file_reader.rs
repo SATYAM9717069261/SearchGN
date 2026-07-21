@@ -18,9 +18,11 @@ pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::
         let mut bytes_read_count:u32 = 0;
         let mut position = 0;
 
-if index.get_words_processed() >= MAX_WORDS {
-    index.print_debugging_details();
-}
+        if index.get_words_processed() >= MAX_WORDS {
+            index.print_debugging_details();
+            return Err(std::io::Error::other("Reached RAM limit"));
+        }
+
         while let Ok(n) = file.read(&mut buffer){
             if n == 0{
                 break;
@@ -50,7 +52,6 @@ if index.get_words_processed() >= MAX_WORDS {
                     }
                 }
             }
-
         }
     }
     Ok(())

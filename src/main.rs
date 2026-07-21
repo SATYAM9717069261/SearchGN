@@ -15,7 +15,7 @@ use std::process::ExitCode;
 use std::io::{stdin};
 use std::env;
 
-const PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test/");
+const PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/dataSet/");
 
 fn main() -> ExitCode {
     let mut inverted_idx:InvertedIndex = InvertedIndex::new();

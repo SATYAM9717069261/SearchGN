@@ -12,6 +12,7 @@ pub fn read_dir(path:String,index:&mut InvertedIndex) -> Result<&'static str,io:
             Ok(file) => {
                 match insert_token(&file.path(),index){
                     Ok(()) => {
+                        index.add_doument_process_count();
                         println!("SUCCESS :: {:?}",file.path());
                     },
                     Err(e) => {

@@ -12,6 +12,7 @@ pub struct InvertedIndex{
     documents:Vec<String>,
     posting_created: usize,
     words_processed: usize,
+    document_processed:usize
 }
 
 impl InvertedIndex{
@@ -23,14 +24,26 @@ impl InvertedIndex{
             //debugging
             posting_created: 0,
             words_processed: 0,
+            document_processed:0,
         }
     }
+
+    pub fn get_words_processed(&self) -> usize{
+        self.words_processed
+    }
+    pub fn add_words_processed(&mut self) {
+        self.words_processed+=1;
+    }
+    pub fn add_doument_process_count(&mut self) {
+        self.document_processed+=1;
+    }
+
     pub fn print_debugging_details(&self){
         println!("Unique Words Count: {:?}",self.map.len());
         println!("Number of Words Procesed: {:?}",self.words_processed);
-        println!("Document Processed: {:?}",self.documents.len());
-
+        println!("Document Processed: {:?}",self.document_processed);
     }
+
     pub fn add_document(&mut self, document_id:&str) -> io::Result<usize>{
         if document_id.trim() == ""{
             return Err(io::Error::new(
@@ -106,12 +119,6 @@ impl InvertedIndex{
         }
     }
 
-    pub fn get_words_processed(&self) -> usize{
-        self.words_processed
-    }
-    pub fn add_words_processed(&mut self) {
-        self.words_processed+=1;
-    }
     pub fn search_word(&self, word:&str) -> Result<&Vec<Posting>,&'static str>{
         match self.map.get(word){
             Some(details) => Ok(details),
