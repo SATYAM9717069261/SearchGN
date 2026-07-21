@@ -4,6 +4,8 @@ use crate::indexer::inverted_index::InvertedIndex;
 use std::io::{self,Read};
 use std::fs::{File};
 
+const MAX_WORDS: usize = 10_000_000; // or 20M
+
 pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::Result<()>{
     let mut file = File::open(file_path)?;
     let mut buffer = [0u8; 64*1024]; // 64 Kbytes
@@ -16,6 +18,9 @@ pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::
         let mut bytes_read_count:u32 = 0;
         let mut position = 0;
 
+if index.get_words_processed() >= MAX_WORDS {
+    index.print_debugging_details();
+}
         while let Ok(n) = file.read(&mut buffer){
             if n == 0{
                 break;
@@ -28,6 +33,7 @@ pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::
                         let term = word.get();
                         index.add_term(term,doc_idx,line,position);
                         word.clear();
+                        index.add_words_processed();
                         position = bytes_read_count+1;
                     },
                     '\n' => {
@@ -35,6 +41,7 @@ pub fn insert_token(file_path:&std::path::Path ,index: &mut InvertedIndex)->io::
                         index.add_term(term,doc_idx,line,position);
                         word.clear();
                         line+=1;
+                        index.add_words_processed();
                         bytes_read_count= 0;
                         position = 0;
                     },

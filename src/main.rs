@@ -13,8 +13,9 @@ use query::evaluator::{evaluate, print_posting_list};
 
 use std::process::ExitCode;
 use std::io::{stdin};
+use std::env;
 
-const PATH:&str = "./test/";
+const PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test/");
 
 fn main() -> ExitCode {
     let mut inverted_idx:InvertedIndex = InvertedIndex::new();
@@ -23,7 +24,7 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     }
     //let json = serde_json::to_string(&inverted_idx).unwrap();
-    println!("list of Word :{:?}", inverted_idx.get_all_words());
+    inverted_idx.print_debugging_details();
 
     loop{
         let mut inp:String = String::new();

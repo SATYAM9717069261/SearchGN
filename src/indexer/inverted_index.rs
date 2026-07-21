@@ -9,17 +9,28 @@ use std::io::{self};
 #[derive(Debug,Serialize, Deserialize)]
 pub struct InvertedIndex{
     map: HashMap<String,Vec<Posting>>,
-    documents:Vec<String>
+    documents:Vec<String>,
+    posting_created: usize,
+    words_processed: usize,
 }
 
 impl InvertedIndex{
     pub fn new()->Self{
         InvertedIndex{
             map: HashMap::new(),
-            documents:Vec::new()
+            documents:Vec::new(),
+
+            //debugging
+            posting_created: 0,
+            words_processed: 0,
         }
     }
+    pub fn print_debugging_details(&self){
+        println!("Unique Words Count: {:?}",self.map.len());
+        println!("Number of Words Procesed: {:?}",self.words_processed);
+        println!("Document Processed: {:?}",self.documents.len());
 
+    }
     pub fn add_document(&mut self, document_id:&str) -> io::Result<usize>{
         if document_id.trim() == ""{
             return Err(io::Error::new(
@@ -48,51 +59,59 @@ impl InvertedIndex{
     pub fn add_term(self:&mut InvertedIndex ,key:String, f_idx:usize, line_number:u32, word_start_at:u32){
         match self.map.get_mut(&key){
             Some(details) => {
-                if let Some(post) = details.iter_mut().find(|document| document.get_document_id() == f_idx){
-                    let idx = post.get_line_no().iter().position(|&line| line == line_number);
-                    if let Some(idx) = idx {
-                        //if every thing match [document_id, line_no] only need to push where you
-                        //should start reading
-                        post.update_position_at(idx, word_start_at);
-                    } else {
-                        // if line number not match
-                        post.add_occurrence(line_number,word_start_at);
+                if let Some(last_document) = details.last_mut(){
+                    if last_document.get_document_id() == f_idx{
+                        let line_no_vec = last_document.get_line_no();
+                        if let Some(&last_line) = line_no_vec.last() {
+                            //if every thing match [document_id, line_no] only need to push where you
+                            //should start reading
+                            if last_line == line_number{
+                                let last_line_at_idx = line_no_vec.len() - 1;
+                                last_document.update_position_at(last_line_at_idx, word_start_at);
+                            }else{
+                                last_document.add_occurrence(line_number,word_start_at); // add new line
+                            }
+                        } else {
+                            // if line number not match
+                            last_document.add_occurrence(line_number,word_start_at);
+                        }
+                    }else{
+                        let mut line_no_list = vec![];
+                        line_no_list.push(line_number);
+                        let mut word_start_at_list = vec![];
+                        word_start_at_list.push(WordStartAt::new(word_start_at));
+                        let posting = Posting::new( f_idx, 1, line_no_list, word_start_at_list);
+                        details.push(posting);
                     }
                 }else{
-                    //if document_id not match
-                    let mut line_no_list = vec![];
-                    line_no_list.push(line_number);
-                    let mut word_start_at_list = vec![];
-                    word_start_at_list.push(WordStartAt::new(word_start_at));
-                    let posting = Posting::new(
-                        f_idx,
-                        1,
-                        line_no_list,
-                        word_start_at_list
-                    );
-                    details.push(posting);
+                    if key != ""{
+                        let mut line_no_list = vec![];
+                        line_no_list.push(line_number);
+                        let mut word_start_at_list = vec![];
+                        word_start_at_list.push(WordStartAt::new(word_start_at));
+                        let posting = Posting::new( f_idx, 1, line_no_list, word_start_at_list);
+                        self.map.insert(key,vec![posting]);
+                    }
                 }
             },
             None => {
                 // if key not exist in hashMap then insert new key
-                if key != ""{
-                    let mut line_no_list = vec![];
-                    line_no_list.push(line_number);
-                    let mut word_start_at_list = vec![];
-                    word_start_at_list.push(WordStartAt::new(word_start_at));
-                    let posting = Posting::new(
-                        f_idx,
-                        1,
-                        line_no_list,
-                        word_start_at_list
-                    );
-                    self.map.insert(key,vec![posting]);
-                }
-
+                let mut line_no_list = vec![];
+                line_no_list.push(line_number);
+                let mut word_start_at_list = vec![];
+                word_start_at_list.push(WordStartAt::new(word_start_at));
+                let posting = Posting::new( f_idx, 1, line_no_list, word_start_at_list);
+                self.map.insert(key,vec![posting]);
             }
         }
     }
 
+    pub fn get_words_processed(&self) -> usize{
+        self.words_processed
+    }
+    pub fn add_words_processed(&mut self) {
+        self.words_processed+=1;
+    }
     pub fn search_word(&self, word:&str) -> Result<&Vec<Posting>,&'static str>{
         match self.map.get(word){
             Some(details) => Ok(details),
