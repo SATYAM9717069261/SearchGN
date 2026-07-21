@@ -4,3 +4,6 @@ output*
 *.zip
 *.DS_Store
 
+profile.json.*
+test/*
+test/*
