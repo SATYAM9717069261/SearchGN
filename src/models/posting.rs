@@ -11,7 +11,7 @@ pub struct Posting{
      * Postiong{
      *  fileName,
      *  how many time Occure Word(A) in this File
-     *  word Occure in Multiple Lines
+     *  word Occure in Multiple Lines, each number in this represent entire words in same line
      *   same Line have mutiple time mentioned Word[
      *              start_at:[1,8,10,100]
      *              start_at:[1,8,10,100]

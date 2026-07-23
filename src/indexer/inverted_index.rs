@@ -10,9 +10,8 @@ use std::io::{self};
 pub struct InvertedIndex{
     map: HashMap<String,Vec<Posting>>,
     documents:Vec<String>,
+
     posting_created: usize,
-    words_processed: usize,
-    document_processed:usize
 }
 
 impl InvertedIndex{
@@ -23,25 +22,17 @@ impl InvertedIndex{
 
             //debugging
             posting_created: 0,
-            words_processed: 0,
-            document_processed:0,
         }
     }
-
-    pub fn get_words_processed(&self) -> usize{
-        self.words_processed
+    pub fn get_map_len(&self) -> usize{
+        self.map.len()
     }
-    pub fn add_words_processed(&mut self) {
-        self.words_processed+=1;
-    }
-    pub fn add_doument_process_count(&mut self) {
-        self.document_processed+=1;
-    }
-
     pub fn print_debugging_details(&self){
-        println!("Unique Words Count: {:?}",self.map.len());
-        println!("Number of Words Procesed: {:?}",self.words_processed);
-        println!("Document Processed: {:?}",self.document_processed);
+        println!("Unique Words Count per Page: {:?}",self.map.len());
+    }
+
+    pub fn iterator(&mut self) -> impl Iterator<Item = (&String,&Vec<Posting>)>{
+        self.map.iter()
     }
 
     pub fn add_document(&mut self, document_id:&str) -> io::Result<usize>{
@@ -126,4 +117,9 @@ impl InvertedIndex{
         }
     }
 
+    pub fn clear(&mut self){
+        self.map.clear();
+        self.posting_created = 0;
+        self.documents.clear();
+    }
 }
