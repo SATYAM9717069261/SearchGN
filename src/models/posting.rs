@@ -31,12 +31,16 @@ impl Posting{
     pub fn get_document_id(&self)->usize{
         self.document_id
     }
-    pub fn get_line_no(&self) -> &Vec<u32>{
+    pub fn get_line_no(&self) -> &[u32]{
         &self.line_no
     }
 
     pub fn get_frequency(&self) -> u32{
         self.frequency
+    }
+
+    pub fn get_word_start_at(&self) -> &[WordStartAt] {
+        &self.positions
     }
 
     pub fn update_frequency(&mut self){

@@ -41,7 +41,7 @@ impl SPIMIManager{
     }
 
     fn flush(&mut self)-> io::Result<()>{
-        self.block_writer.write_block(&self.current_index, self.block_id);
+        self.block_writer.write_block(&mut self.current_index, self.block_id)?;
         self.block_id+=1;
         self.words_processed = 0;
         self.current_index.clear();

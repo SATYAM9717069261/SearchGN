@@ -12,14 +12,19 @@ use query::parser::parse_token_to_ast;
 use query::evaluator::{evaluate, print_posting_list};
 
 use std::process::ExitCode;
+use std::path::PathBuf;
 use std::io::{stdin};
 use std::env;
 
 const PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/dataSet/");
+const OUTPUT_PATH:&str = "./tmp";
 
 fn main() -> ExitCode {
+    let output_path:PathBuf = PathBuf::from(OUTPUT_PATH);
+
     match SPIMIManager::new(
-            std::env::temp_dir().join("SearchGN"),
+            //std::env::temp_dir().join("SearchGN"),
+            output_path,
             1000000
         ){
         Ok(mut manager) =>{
