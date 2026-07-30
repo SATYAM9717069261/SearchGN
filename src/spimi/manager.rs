@@ -48,7 +48,7 @@ impl SPIMIManager{
         Ok(())
     }
 
-    pub fn add_term(&mut self ,key:String, f_idx:usize, line_number:u32, word_start_at:u32)-> io::Result<()> {
+    pub fn add_term(&mut self ,key:String, f_idx:u32, line_number:u32, word_start_at:u32)-> io::Result<()> {
         self.current_index.add_term(key, f_idx, line_number, word_start_at);
         self.words_processed += 1;
         if self.words_processed >= self.flush_limit {
@@ -57,4 +57,10 @@ impl SPIMIManager{
         Ok(())
     }
 
+    pub fn finish(&mut self) -> io::Result<()> {
+        if self.current_index.get_map_len() > 0 {
+            self.flush()?;
+        }
+        Ok(())
+    }
 }

@@ -35,7 +35,7 @@ impl InvertedIndex{
         self.map.iter()
     }
 
-    pub fn add_document(&mut self, document_id:&str) -> io::Result<usize>{
+    pub fn add_document(&mut self, document_id:&str) -> io::Result<u32>{
         if document_id.trim() == ""{
             return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
@@ -43,10 +43,10 @@ impl InvertedIndex{
             ));
         }
         if let Some(idx) = self.documents.iter().position( |d| d == document_id ){
-            return Ok(idx);
+            return Ok(idx as u32);
         }
         self.documents.push(document_id.to_string());
-        return Ok(self.documents.len() - 1);
+        return Ok(self.documents.len() as u32 - 1);
     }
 
     pub fn get_docuemnt(&self, idx:usize) -> &str{
@@ -60,7 +60,7 @@ impl InvertedIndex{
         self.map.clone().into_keys().collect()
     }
 
-    pub fn add_term(self:&mut InvertedIndex ,key:String, f_idx:usize, line_number:u32, word_start_at:u32){
+    pub fn add_term(self:&mut InvertedIndex , key:String, f_idx:u32, line_number:u32, word_start_at:u32){
         match self.map.get_mut(&key){
             Some(details) => {
                 if let Some(last_document) = details.last_mut(){
@@ -82,9 +82,9 @@ impl InvertedIndex{
                     }else{
                         let mut line_no_list = vec![];
                         line_no_list.push(line_number);
-                        let mut word_start_at_list = vec![];
-                        word_start_at_list.push(WordStartAt::new(word_start_at));
-                        let posting = Posting::new( f_idx, 1, line_no_list, word_start_at_list);
+                        let mut word_start = WordStartAt::new();
+                        word_start.push(word_start_at);
+                        let posting = Posting::new( f_idx, 1, line_no_list, vec![word_start]);
                         details.push(posting);
                     }
                 }else{
@@ -92,7 +92,9 @@ impl InvertedIndex{
                         let mut line_no_list = vec![];
                         line_no_list.push(line_number);
                         let mut word_start_at_list = vec![];
-                        word_start_at_list.push(WordStartAt::new(word_start_at));
+                        let mut word_start = WordStartAt::new();
+                        word_start.push(word_start_at);
+                        word_start_at_list.push(word_start);
                         let posting = Posting::new( f_idx, 1, line_no_list, word_start_at_list);
                         self.map.insert(key,vec![posting]);
                     }
@@ -103,7 +105,11 @@ impl InvertedIndex{
                 let mut line_no_list = vec![];
                 line_no_list.push(line_number);
                 let mut word_start_at_list = vec![];
-                word_start_at_list.push(WordStartAt::new(word_start_at));
+
+                let mut word_start = WordStartAt::new();
+                word_start.push(word_start_at);
+                word_start_at_list.push(word_start);
+
                 let posting = Posting::new( f_idx, 1, line_no_list, word_start_at_list);
                 self.map.insert(key,vec![posting]);
             }

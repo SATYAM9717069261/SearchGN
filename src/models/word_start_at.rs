@@ -5,9 +5,9 @@ pub struct WordStartAt{
     start_at:Vec<u32>
 }
 impl WordStartAt{
-    pub fn new(start_at:u32) -> Self{
+    pub fn new() -> Self{
         WordStartAt{
-            start_at: vec![start_at]
+            start_at: vec![]
         }
     }
     pub fn push(&mut self,start_at:u32){

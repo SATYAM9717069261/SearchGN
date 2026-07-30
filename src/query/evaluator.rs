@@ -12,7 +12,7 @@ fn build_universe(index: &InvertedIndex) -> PostingList {
     let mut result = PostingList::new();
     for doc_id in 0..index.get_all_document().len() {
         result.postings.push(
-            Posting::new(doc_id, 0, Vec::new(), Vec::new())
+            Posting::new(doc_id as u32, 0, Vec::new(), Vec::new())
         );
     }
     result
@@ -142,7 +142,7 @@ pub fn evaluate(node:&AstNode,idx: &InvertedIndex ) ->PostingList {
 
 pub fn print_posting_list(list: &PostingList, index: &InvertedIndex) {
     for posting in &list.postings {
-        println!("{}", index.get_docuemnt(posting.get_document_id()));
+        println!("{}", index.get_docuemnt(posting.get_document_id() as usize));
     }
 }
 

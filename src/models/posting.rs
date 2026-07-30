@@ -3,7 +3,7 @@ use crate::models::word_start_at::WordStartAt;
 
 #[derive(Debug,Clone,Serialize, Deserialize)]
 pub struct Posting{
-    document_id:usize,
+    document_id:u32,
     frequency:u32,
     line_no:Vec<u32>,
     positions: Vec<WordStartAt>,
@@ -20,7 +20,7 @@ pub struct Posting{
      */
 }
 impl Posting{
-    pub fn new(index:usize,freq:u32,line_no:Vec<u32>,pos:Vec<WordStartAt>)->Self{
+    pub fn new(index:u32,freq:u32,line_no:Vec<u32>,pos:Vec<WordStartAt>)->Self{
         Posting{
             document_id:index,
             frequency:freq,
@@ -28,7 +28,7 @@ impl Posting{
             positions: pos
         }
     }
-    pub fn get_document_id(&self)->usize{
+    pub fn get_document_id(&self)->u32{
         self.document_id
     }
     pub fn get_line_no(&self) -> &[u32]{
@@ -63,6 +63,10 @@ impl Posting{
     pub fn add_occurrence( &mut self, line: u32, position: u32,) {
         self.frequency += 1;
         self.push_new_line(line);
-        self.push_new_positions( WordStartAt::new(position),);
+
+        let mut word_start = WordStartAt::new();
+        word_start.push(position);
+
+        self.push_new_positions(word_start);
     }
 }

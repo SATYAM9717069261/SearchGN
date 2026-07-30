@@ -6,6 +6,7 @@ mod spimi;
 
 use reader::directory_reader::{read_dir};
 use spimi::manager::SPIMIManager;
+use spimi::reader::BlockReader;
 
 use query::lexer::Lexer;
 use query::parser::parse_token_to_ast;
@@ -24,7 +25,7 @@ fn main() -> ExitCode {
 
     match SPIMIManager::new(
             //std::env::temp_dir().join("SearchGN"),
-            output_path,
+            output_path.clone(),
             1000000
         ){
         Ok(mut manager) =>{
@@ -36,6 +37,11 @@ fn main() -> ExitCode {
         Err(er) => {
             println!("Error: {:?}",er);
         }
+    }
+
+    if let Ok(reader) = BlockReader::new(output_path.clone()){
+        let rtn = reader.read_block(0);
+        println!("{:?}",rtn);
     }
 
     //let json = serde_json::to_string(&inverted_idx).unwrap();

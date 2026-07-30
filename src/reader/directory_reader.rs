@@ -14,6 +14,7 @@ pub fn read_dir(path:String,spimi_manager:&mut SPIMIManager) -> Result<&'static 
                     Ok(()) => {
                         spimi_manager.add_doument_process_count();
                         println!("SUCCESS :: {:?}",file.path());
+
                     },
                     Err(e) => {
                         println!("ERROR :: Can't read file {:?} : {:?}",file.path(),e);
@@ -23,5 +24,6 @@ pub fn read_dir(path:String,spimi_manager:&mut SPIMIManager) -> Result<&'static 
             Err(_) =>{ }
         }
     }
+    spimi_manager.finish()?;
     Ok("Sucessfully Created Inverted Index")
 }

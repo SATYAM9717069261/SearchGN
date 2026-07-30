@@ -5,15 +5,12 @@ use std::path::PathBuf;
 use crate::models::posting::Posting;
 use crate::indexer::inverted_index::InvertedIndex;
 use crate::models::word_start_at::WordStartAt;
-
+use crate::spimi::format::{MAGIC, VERSION, BLOCK_EXTENSION};
 /*
  * Magic Number (8 bytes)
  * Version (u32)
  * Word Count (u32)
  */
-
-const MAGIC: &[u8; 8] = b"SEARCHGN";
-const VERSION: u32 = 1;
 
 pub struct BlockWriter {
     output_path: PathBuf,
@@ -25,7 +22,7 @@ impl BlockWriter {
         Ok(Self{ output_path })
     }
 
-    fn write_header(&mut self,writer: &mut BufWriter<File>, word_count: u32) -> io::Result<()>{
+    fn write_header(&mut self,writer: &mut  BufWriter<File>, word_count: u32) -> io::Result<()>{
         writer.write_all(MAGIC)?;
         writer.write_all(&VERSION.to_le_bytes())?;
         writer.write_all(&word_count.to_le_bytes())?;
@@ -52,6 +49,7 @@ impl BlockWriter {
 
         let line_count = posting.get_line_no().len() as u32;
         writer.write_all(&line_count.to_le_bytes())?;
+
         for (line_no, positions) in posting.get_line_no().iter()
             .zip(posting.get_word_start_at()){
                 self.write_line(writer, *line_no, positions)?;
@@ -61,9 +59,9 @@ impl BlockWriter {
     }
 
     fn write_line( &self, writer: &mut BufWriter<File>, line_no: u32, positions: &WordStartAt,) -> io::Result<()>{
-        writer.write_all(&line_no.to_le_bytes())?;
+        writer.write_all(&line_no.to_le_bytes())?; // line number
         let position_count = positions.get_start_at().len() as u32;
-        writer.write_all(&position_count.to_le_bytes())?;
+        writer.write_all(&position_count.to_le_bytes())?; // lines.len()
         self.write_positions(writer, positions)?;
         Ok(())
     }
@@ -76,15 +74,18 @@ impl BlockWriter {
     }
 
     pub fn write_block(&mut self, index: &mut InvertedIndex, block_id:usize) -> io::Result<()>{
-        let path = self.output_path.join(format!("block_{}.idx",block_id));
-        let file = File::create(path)?;
+        let path = self.output_path.join(format!("block_{}.{}",block_id,BLOCK_EXTENSION));
+        let file = File::create(&path)?;
         let mut writer = BufWriter::new(file);
         self.write_header( &mut writer, index.get_map_len() as u32)?;
 
         for (word,posting) in index.iterator(){
-            self.write_word_entry(&mut writer,word,posting);
+            self.write_word_entry(&mut writer,word,posting)?;
         }
-
+        writer.flush()?;
+        drop(writer);
+        let size = std::fs::metadata(&path)?.len();
+        println!("FILE SIZE After Write = {} bytes {:?}", size, path);
         Ok(())
     }
 }
