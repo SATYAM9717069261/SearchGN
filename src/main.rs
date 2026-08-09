@@ -5,11 +5,12 @@ mod query;
 mod spimi;
 
 use reader::directory_reader::{read_dir};
-use spimi::manager::SPIMIManager;
-use spimi::reader::BlockReader;
+use spimi::merge_manager::MergeManager;
 
 use query::lexer::Lexer;
 use query::parser::parse_token_to_ast;
+use spimi::manager::SPIMIManager;
+
 use query::evaluator::{evaluate, print_posting_list};
 
 use std::process::ExitCode;
@@ -19,29 +20,34 @@ use std::env;
 
 const PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/dataSet/");
 const OUTPUT_PATH:&str = "./tmp";
+const FINAL_OUTPUT_PATH:&str = "./tmp/final";
 
 fn main() -> ExitCode {
     let output_path:PathBuf = PathBuf::from(OUTPUT_PATH);
+    let final_output_path:PathBuf = PathBuf::from(FINAL_OUTPUT_PATH);
 
-    match SPIMIManager::new(
-            //std::env::temp_dir().join("SearchGN"),
-            output_path.clone(),
-            1000000
-        ){
-        Ok(mut manager) =>{
-            if let Err(err) = read_dir(PATH.to_string(),&mut manager){
-                println!("{:?}",err);
-                return ExitCode::FAILURE;
-            }
-        },
-        Err(er) => {
-            println!("Error: {:?}",er);
+  match SPIMIManager::new(
+          //std::env::temp_dir().join("SearchGN"),
+          output_path.clone(),
+          1000000
+      ){
+      Ok(mut manager) =>{
+          if let Err(err) = read_dir(PATH.to_string(),&mut manager){
+              println!("{:?}",err);
+              return ExitCode::FAILURE;
+          }
+      },
+      Err(er) => {
+          println!("Error: {:?}",er);
+      }
+  }
+
+    let mut merger = MergeManager::new(output_path,final_output_path);
+    match merger.merge_two_blocks(0, 1){
+        Ok(())=>{},
+        Err(err) => {
+            println!("Error {:?}",err);
         }
-    }
-
-    if let Ok(reader) = BlockReader::new(output_path.clone()){
-        let rtn = reader.read_block(0);
-        println!("{:?}",rtn);
     }
 
     //let json = serde_json::to_string(&inverted_idx).unwrap();

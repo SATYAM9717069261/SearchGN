@@ -3,27 +3,23 @@ use std::io::{self, BufReader, Read};
 use std::path::PathBuf;
 
 use crate::spimi::format::{MAGIC, VERSION,BLOCK_EXTENSION};
-use crate::indexer::inverted_index::InvertedIndex;
+use crate::models::posting::Posting;
+use crate::models::word_start_at::WordStartAt;
 
+#[derive(Debug)]
 pub struct BlockReader {
-    input_path: PathBuf,
+    reader: BufReader<File>,
+    remaining_words: u32,
 }
 
-fn read_u32(reader: &mut BufReader<File>) -> io::Result<u32>{
-    let mut buf = [0u8; 4];
-    reader.read_exact(&mut buf)?;
-    let value = u32::from_le_bytes(buf);
-    Ok(value)
+#[derive(Debug)]
+pub struct WordEntry {
+    pub word: String,
+    pub postings: Vec<Posting>,
 }
 
 
-impl BlockReader {
-    pub fn new(input_path: PathBuf) -> io::Result<Self> {
-        Ok(Self { input_path })
-    }
-
-
-    fn read_header( &self, reader: &mut BufReader<File>,) -> io::Result<u32>{
+fn read_header(reader: &mut BufReader<File>) -> io::Result<u32>{
         let mut magic = [0u8; 8];
         reader.read_exact(&mut magic)?;
         if &magic != MAGIC {
@@ -51,69 +47,83 @@ impl BlockReader {
         Ok(u32::from_le_bytes(word_count))
     }
 
-    fn read_word_entry( &self, reader: &mut BufReader<File>, index: &mut InvertedIndex) -> io::Result<()> {
-        let word_len = read_u32(reader)?;
+impl BlockReader {
 
+    fn read_u32(&mut self) -> io::Result<u32>{
+        let mut buf = [0u8; 4];
+        self.reader.read_exact(&mut buf)?;
+        let value = u32::from_le_bytes(buf);
+        Ok(value)
+    }
+
+    pub fn new(input_path: PathBuf) -> io::Result<BlockReader> {
+        let file = File::open(input_path)?;
+        let mut reader = BufReader::new(file);
+        let remaining_words = read_header(&mut reader)?;
+        Ok(Self { reader, remaining_words })
+    }
+
+    fn read_word_entry(&mut self) -> io::Result<WordEntry>{
+        let word_len = self.read_u32()?;
         let mut bytes = vec![0u8; word_len as usize];
-        reader.read_exact(&mut bytes)?;
 
-        let word = String::from_utf8(bytes)
-            .map_err(|_| io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "Invalid UTF-8",
-            ))?;
+        self.reader.read_exact(&mut bytes)?;
+
+        let word = String::from_utf8(bytes).map_err(|_| io::Error::new( io::ErrorKind::InvalidData, "Invalid UTF-8"))?;
         let mut posting_count_bytes = [0u8; 4];
-        reader.read_exact(&mut posting_count_bytes)?;
+
+        self.reader.read_exact(&mut posting_count_bytes)?;
         let posting_count = u32::from_le_bytes(posting_count_bytes);
 
+        let mut postings = Vec::new();
+
         for _ in 0..posting_count {
-            self.read_posting(reader,&word,index)?;
+            let posting = self.read_posting()?;
+            postings.push(posting);
         }
-        Ok(())
+
+        Ok(WordEntry{ word, postings })
     }
 
+    fn read_posting(&mut self) -> io::Result<Posting>{
+        let document_id = self.read_u32()?;
+        let frequency = self.read_u32()?;
+        let line_count = self.read_u32()?;
 
-    fn read_posting( &self, reader: &mut BufReader<File>,word:&str,index: &mut InvertedIndex) -> io::Result<()> {
-        let document_id = read_u32(reader)?;
-        let frequency = read_u32(reader)?;
-        let line_count = read_u32(reader)?;
-
+        let mut line_no:Vec<u32> = vec![];
+        let mut positions:Vec<WordStartAt>  = vec![];
         for _ in 0..line_count {
-            self.read_line(reader,word,document_id,index)?;
+            let (line,word_start_at) = self.read_line()?;
+            line_no.push(line);
+            positions.push(word_start_at);
         }
-        Ok(())
+        Ok(Posting::new( document_id, frequency, line_no, positions))
     }
 
-    fn read_line( &self, reader: &mut BufReader<File>,word:&str,document_id:u32,index: &mut InvertedIndex) -> io::Result<()> {
-        let line_no = read_u32(reader)?;
-        let position_count = read_u32(reader)?;
+    fn read_line(&mut self) -> io::Result<(u32,WordStartAt)> {
+        let line_no = self.read_u32()?;
+        let position_count = self.read_u32()?;
+        let mut word_start_at = WordStartAt::new();
+
         for _ in 0..position_count {
-            let rtn_pos = self.read_position(reader)?;
-            index.add_term(word.to_owned(),document_id,line_no,rtn_pos);
+            let rtn_pos = self.read_position()?;
+            word_start_at.push(rtn_pos);
         }
-        Ok(())
+
+        Ok((line_no,word_start_at))
     }
 
-    fn read_position( &self, reader: &mut BufReader<File>) -> io::Result<u32> {
-        let position = read_u32(reader)?;
+    fn read_position(&mut self) -> io::Result<u32> {
+        let position = self.read_u32()?;
         Ok(position)
     }
 
-
-    pub fn read_block( &self, block_id: usize,) -> io::Result<InvertedIndex> {
-        let path = self.input_path.join(format!("block_{}.{}", block_id,BLOCK_EXTENSION));
-        let size = std::fs::metadata(&path)?.len();
-        println!("FILE SIZE READ = {} {:?}", size, path);
-
-        let file = File::open(path)?;
-        let mut reader = BufReader::new(file);
-        let mut index = InvertedIndex::new();
-
-        let word_count = self.read_header(&mut reader)?;
-        for _ in 0..word_count {
-            self.read_word_entry(&mut reader,&mut index)?;
+    pub fn next_word(&mut self) -> io::Result<Option<WordEntry>>{    //
+        if self.remaining_words == 0 {
+            return Ok(None);
         }
-
-        Ok(index)
+        let entry = self.read_word_entry()?;
+        self.remaining_words -= 1;
+        Ok(Some(entry))
     }
 }
