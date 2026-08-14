@@ -18,8 +18,23 @@ pub struct WordEntry {
     pub postings: Vec<Posting>,
 }
 
+impl BlockReader {
 
-fn read_header(reader: &mut BufReader<File>) -> io::Result<u32>{
+    pub fn new(input_path: PathBuf) -> io::Result<BlockReader> {
+        let file = File::open(input_path)?;
+        let mut reader = BufReader::new(file);
+        let remaining_words = Self::read_header(&mut reader)?;
+        Ok(Self { reader, remaining_words })
+    }
+
+    fn read_u32(&mut self) -> io::Result<u32>{
+        let mut buf = [0u8; 4];
+        self.reader.read_exact(&mut buf)?;
+        let value = u32::from_le_bytes(buf);
+        Ok(value)
+    }
+
+    fn read_header(reader: &mut BufReader<File>) -> io::Result<u32>{
         let mut magic = [0u8; 8];
         reader.read_exact(&mut magic)?;
         if &magic != MAGIC {
@@ -45,22 +60,6 @@ fn read_header(reader: &mut BufReader<File>) -> io::Result<u32>{
         reader.read_exact(&mut word_count)?;
 
         Ok(u32::from_le_bytes(word_count))
-    }
-
-impl BlockReader {
-
-    fn read_u32(&mut self) -> io::Result<u32>{
-        let mut buf = [0u8; 4];
-        self.reader.read_exact(&mut buf)?;
-        let value = u32::from_le_bytes(buf);
-        Ok(value)
-    }
-
-    pub fn new(input_path: PathBuf) -> io::Result<BlockReader> {
-        let file = File::open(input_path)?;
-        let mut reader = BufReader::new(file);
-        let remaining_words = read_header(&mut reader)?;
-        Ok(Self { reader, remaining_words })
     }
 
     fn read_word_entry(&mut self) -> io::Result<WordEntry>{
@@ -118,7 +117,7 @@ impl BlockReader {
         Ok(position)
     }
 
-    pub fn next_word(&mut self) -> io::Result<Option<WordEntry>>{    //
+    pub fn next_word(&mut self) -> io::Result<Option<WordEntry>>{
         if self.remaining_words == 0 {
             return Ok(None);
         }

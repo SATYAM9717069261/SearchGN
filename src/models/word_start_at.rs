@@ -16,6 +16,12 @@ impl WordStartAt{
     pub fn get_start_at(&self)->&[u32]{
         &self.start_at
     }
+    pub fn merge(&mut self, other: &WordStartAt) {
+        self.start_at.extend(
+            other.start_at.iter().copied()
+        );
+        self.start_at.sort_unstable();
+    }
 }
 
 

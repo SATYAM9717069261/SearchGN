@@ -13,27 +13,23 @@ use crate::spimi::format::{MAGIC, VERSION, BLOCK_EXTENSION};
  */
 
 pub struct BlockWriter {
-    writer: BufWriter<File>,
-    word_count: u32,
+    output_path: PathBuf,
 }
 
 impl BlockWriter {
-    pub fn new(path: PathBuf) -> io::Result<Self> {
-        let file = File::create(path)?;
-        let mut writer = BufWriter::new(file);
-
-        writer.write_all(MAGIC)?;
-        writer.write_all(&VERSION.to_le_bytes())?;
-
-        writer.write_all(&0u32.to_le_bytes())?;
-
-        Ok(Self {
-            writer,
-            word_count: 0,
-        })
+    pub fn new(output_path: PathBuf) ->io::Result<Self>{
+        fs::create_dir_all(&output_path)?;
+        Ok(Self{ output_path })
     }
 
-    pub fn write_word_entry( &mut self, word: &str, postings: &[Posting]) -> io::Result<()> {
+    fn write_header(&mut self,writer: &mut  BufWriter<File>, word_count: u32) -> io::Result<()>{
+        writer.write_all(MAGIC)?;
+        writer.write_all(&VERSION.to_le_bytes())?;
+        writer.write_all(&word_count.to_le_bytes())?;
+        Ok(())
+    }
+
+    fn write_word_entry(&mut self, writer:&mut BufWriter<File>, word: &str, postings: &[Posting]) -> io::Result<()>{
         let word_len = word.len() as u32;
 
         writer.write_all(&word_len.to_le_bytes())?;
@@ -47,7 +43,7 @@ impl BlockWriter {
         Ok(())
     }
 
-    fn write_posting( &mut self, posting: &Posting,) -> io::Result<()> {
+    fn write_posting(&self, writer: &mut BufWriter<File>, posting: &Posting,) -> io::Result<()> {
         writer.write_all(&posting.get_document_id().to_le_bytes())?;
         writer.write_all(&posting.get_frequency().to_le_bytes())?;
 
@@ -62,19 +58,11 @@ impl BlockWriter {
         Ok(())
     }
 
-    fn write_line( &mut self, line_no: u32, positions: &WordStartAt,) -> io::Result<()> {
+    fn write_line( &self, writer: &mut BufWriter<File>, line_no: u32, positions: &WordStartAt,) -> io::Result<()>{
         writer.write_all(&line_no.to_le_bytes())?; // line number
         let position_count = positions.get_start_at().len() as u32;
         writer.write_all(&position_count.to_le_bytes())?; // lines.len()
         self.write_positions(writer, positions)?;
-        Ok(())
-    }
-
-    pub fn finish(mut self) -> io::Result<()> {
-        self.writer.flush()?;
-        self.writer.seek(SeekFrom::Start(12))?;
-        self.writer.write_all(&self.word_count.to_le_bytes())?;
-        self.writer.flush()?;
         Ok(())
     }
 
@@ -85,4 +73,19 @@ impl BlockWriter {
         Ok(())
     }
 
+    pub fn write_block(&mut self, index: &mut InvertedIndex, block_id:usize) -> io::Result<()>{
+        let path = self.output_path.join(format!("block_{}.{}",block_id,BLOCK_EXTENSION));
+        let file = File::create(&path)?;
+        let mut writer = BufWriter::new(file);
+        self.write_header( &mut writer, index.get_map_len() as u32)?;
+
+        for (word,posting) in index.iterator(){
+            self.write_word_entry(&mut writer,word,posting)?;
+        }
+        writer.flush()?;
+        drop(writer);
+        let size = std::fs::metadata(&path)?.len();
+        println!("FILE SIZE After Write = {} bytes {:?}", size, path);
+        Ok(())
+    }
 }
