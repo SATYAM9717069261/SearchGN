@@ -1,41 +1,52 @@
 use std::path::PathBuf;
 use std::io::{self,BufWriter,Write};
 use std::fs::{self,File};
-use std::cmp;
 
-use crate::spimi::format::{BLOCK_EXTENSION,MAGIC, VERSION};
 use crate::models::posting::Posting;
 use crate::models::word_start_at::WordStartAt;
 use crate::spimi::reader::{BlockReader,WordEntry};
 use crate::spimi::merge_writer::Merge_Writer;
 
+use crate::spimi::thread_pool::ThreadPool;
+use crate::spimi::merge_job::MergeJob;
+use std::sync::mpsc::{self, Receiver, Sender};
 
 pub struct MergeManager {
-    path: PathBuf,
+    block_files: Vec<PathBuf>,
+    thread_pool: ThreadPool,
     output_path: PathBuf,
 }
 
 impl MergeManager{
-    pub fn new(path:PathBuf, output_path: PathBuf) -> Self{
+    pub fn new(path:PathBuf, output_path: PathBuf, thread_count: usize) -> Self{
         if fs::create_dir_all(&output_path).is_ok(){
+            let mut dir_iter = fs::read_dir(path).expect("Dir Error");
+            let mut file_list:Vec<PathBuf> = vec![];
+
+            while let Some(entry) = dir_iter.next(){
+                match entry{
+                    Ok(entry) => file_list.push(entry.path()),
+                    Err(er) => println!("blockFile Processing: {:?}",er)
+                }
+            }
+
             return Self{
-                path:path,
+                block_files:file_list,
                 output_path: output_path,
+                thread_pool: ThreadPool::new(thread_count)
             }
         }else{
-            panic!("Check Output Path: {:?}",output_path);
+            panic!("Failed to Create Output Path: {:?}",output_path);
         }
     }
 
-    pub fn get_file_name(&self,id:usize) -> PathBuf{
-        self.path.join(format!("block_{}.{}", id, BLOCK_EXTENSION))
-    }
 
-    pub fn merge_two_blocks( &mut self, left_id: usize, right_id: usize) -> io::Result<()> {
-        let mut writer = Merge_Writer::new(&self.output_path,1)?;
 
-        let mut left = BlockReader::new(self.get_file_name(left_id))?;
-        let mut right = BlockReader::new(self.get_file_name(right_id))?;
+    pub fn merge_two_blocks(left_path: PathBuf, right_path: PathBuf, output_path: PathBuf, output_id: u32) -> io::Result<()> {
+        let mut writer = Merge_Writer::new(&output_path,output_id as usize,0)?;
+
+        let mut left = BlockReader::new(left_path)?;
+        let mut right = BlockReader::new(right_path)?;
 
         let mut left_entry =  left.next_word()?; // WordEntry{ word:String, postings:Vec<POSTING> }
         let mut right_entry =  right.next_word()?;
@@ -69,8 +80,8 @@ impl MergeManager{
             right_entry = right.next_word()?;
         }
 
-        let size = std::fs::metadata(writer.get_file_path())?.len();
-        println!("FILE SIZE After Write = {} bytes {:?}", size, writer.get_file_path());
+        let size = std::fs::metadata(&output_path)?.len();
+        println!("FILE SIZE After Write = {} bytes {:?}", size, output_path);
         writer.finish()?;
         Ok(())
     }

@@ -14,8 +14,8 @@ pub struct Merge_Writer{
 }
 
 impl Merge_Writer{
-    pub fn new(output_path:&PathBuf, id:u32) ->io::Result<Self>{
-        let path = output_path.join(format!("merge_block_{}.{}",id,BLOCK_EXTENSION));
+    pub fn new(output_path:&PathBuf, round: usize,id:u32) ->io::Result<Self>{
+        let path = output_path.join(format!("merge_r{}_{}.{}", round, id, BLOCK_EXTENSION));
         let file = File::create(&path)?;
         let mut write =  BufWriter::new(file);
 
