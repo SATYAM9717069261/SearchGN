@@ -15,6 +15,7 @@ pub struct MergeManager {
     block_files: Vec<PathBuf>,
     thread_pool: ThreadPool,
     output_path: PathBuf,
+
 }
 
 impl MergeManager{
