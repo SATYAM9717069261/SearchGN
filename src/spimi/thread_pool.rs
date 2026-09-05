@@ -1,107 +1,69 @@
-use std::sync::{
-    mpsc::{self, Receiver, Sender},
-    Arc, Mutex,
-};
-use std::thread;
-
-type Job = Box<dyn FnOnce() + Send + 'static>;
-enum Message {
-    NewJob(Job),
-    Shutdown,
-}
-
-struct Worker {
-    id: usize,
-    thread: Option<thread::JoinHandle<()>>,
-}
+use crate::spimi::worker::{Job, Worker};
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 
 pub struct ThreadPool {
-    workers: Vec<Worker>,
-    sender: Sender<Message>,
+    workers: Vec<Arc<Worker>>,
+    active_worker: Arc<Mutex<Vec<bool>>>,
 }
 
 impl ThreadPool {
-    pub fn new(thread_count: usize) -> Self {
-        assert!(thread_count > 0);
+    pub fn new(count: usize) -> Self {
+        let mut workers = Vec::with_capacity(count);
 
-        let (sender, receiver) = mpsc::channel::<Message>();
-
-        let receiver = Arc::new(Mutex::new(receiver));
-
-        let mut workers = Vec::with_capacity(thread_count);
-
-        for id in 0..thread_count {
-            let receiver = Arc::clone(&receiver);
-
-            let thread = thread::spawn(move || {
-                loop {
-                    let message = {
-                        let receiver = receiver.lock().unwrap();
-
-                        receiver.recv()
-                    };
-
-                    match message {
-                        Ok(Message::NewJob(job)) => {
-                            println!("Worker {id} started job");
-
-                            job();
-
-                            println!("Worker {id} finished job");
-                        }
-
-                        Ok(Message::Shutdown) => {
-                            println!("Worker {id} shutting down");
-                            break;
-                        }
-
-                        Err(_) => {
-                            println!("Worker {id} disconnected");
-                            break;
-                        }
-                    }
-                }
-            });
-
-            workers.push(Worker {
-                id,
-                thread: Some(thread),
-            });
+        for id in 0..count {
+            workers.push(Arc::new(Worker::new(id)));
         }
 
         Self {
-            workers,
-            sender,
+            workers:workers,
+            active_worker: Arc::new(Mutex::new(vec![false; count])),
         }
     }
 
-    pub fn execute<F>(&self, job: F)
+    pub fn get_active_worker_count(&self) -> usize {
+        let active_worker = self.active_worker.lock().unwrap();
+        active_worker
+            .iter()
+            .filter(|active| **active)
+            .count()
+    }
+
+    pub fn submit<F, O>( &mut self, file1: PathBuf, file2: PathBuf, process_fn: F, output_write_fn: O,) -> bool
     where
-        F: FnOnce() + Send + 'static,
-    {
-        self.sender
-            .send(Message::NewJob(Box::new(job)))
-            .expect("Failed to send job to thread pool");
-    }
+        F: FnOnce(PathBuf, PathBuf, u32) -> Option<PathBuf> + Send + 'static,
+        O: FnOnce(PathBuf) + Send + 'static, {
 
-    pub fn size(&self) -> usize {
-        self.workers.len()
-    }
-}
+        let worker_idx = {
+            let mut active_worker = self.active_worker.lock().unwrap();
+            match active_worker.iter().position(|active| !*active) {
+                Some(idx) => {
+                    active_worker[idx] = true;
+                    idx
+                },
+                None => {
+                    return false;
+                }
+            }
+        };
 
-impl Drop for ThreadPool {
-    fn drop(&mut self) {
-        for _ in &self.workers {
-            self.sender
-                .send(Message::Shutdown)
-                .expect("Failed to shutdown worker");
-        }
+        let active_worker = Arc::clone(&self.active_worker);
+        let job: Job = Box::new(move || {
+            if let Some(output) = process_fn(file1, file2,worker_idx as u32){
+                output_write_fn(output);
+            }
+            // Worker becomes free on both cases
+            let mut active_worker = active_worker.lock().unwrap();
+            active_worker[worker_idx] = false;
+        });
 
-        for worker in &mut self.workers {
-            if let Some(thread) = worker.thread.take() {
-                thread
-                    .join()
-                    .expect("Failed to join worker thread");
+        let worker = Arc::clone(&self.workers[worker_idx]);
+        match worker.submit(job){
+            Ok(()) => true,
+            Err(err) => {
+                eprintln!("Worker {} is dead: {:?}", worker_idx, err);
+                self.workers[worker_idx] = Arc::new(Worker::new(worker_idx));
+                false
             }
         }
     }

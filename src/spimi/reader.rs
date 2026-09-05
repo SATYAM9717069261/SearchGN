@@ -20,7 +20,7 @@ pub struct WordEntry {
 
 impl BlockReader {
 
-    pub fn new(input_path: PathBuf) -> io::Result<BlockReader> {
+    pub fn new(input_path: &PathBuf) -> io::Result<BlockReader> {
         let file = File::open(input_path)?;
         let mut reader = BufReader::new(file);
         let remaining_words = Self::read_header(&mut reader)?;

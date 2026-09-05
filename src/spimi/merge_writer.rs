@@ -10,7 +10,7 @@ use crate::models::word_start_at::WordStartAt;
 pub struct Merge_Writer{
     write_buffer: BufWriter<File>,
     word_count: u32,
-    file_path: PathBuf
+    output_file_path: PathBuf
 }
 
 impl Merge_Writer{
@@ -23,10 +23,10 @@ impl Merge_Writer{
         write.write_all(&VERSION.to_le_bytes())?;
         write.write_all(&0u32.to_le_bytes())?;
 
-        Ok(Merge_Writer{ file_path:path, write_buffer: write, word_count: 0 })
+        Ok(Merge_Writer{ output_file_path:path, write_buffer: write, word_count: 0 })
     }
     pub fn get_file_path(&self) -> PathBuf{
-        self.file_path.clone()
+        self.output_file_path.clone()
     }
     pub fn write_word_entry(&mut self, word_entry:&WordEntry) -> io::Result<()>{
         let word: &str = &word_entry.word;
@@ -75,12 +75,12 @@ impl Merge_Writer{
         Ok(())
     }
 
-    pub fn finish(mut self) -> io::Result<()> {
+    pub fn finish(mut self) -> io::Result<PathBuf> {
         self.write_buffer.flush()?;
         let mut file = self.write_buffer.into_inner().map_err(|e| e.into_error())?;
         file.seek(SeekFrom::Start(12))?; // skip 12 Bytes
         file.write_all(&self.word_count.to_le_bytes())?;
-        Ok(())
+        Ok(self.output_file_path)
     }
 
 }

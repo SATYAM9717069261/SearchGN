@@ -23,42 +23,26 @@ fn main() -> ExitCode {
     let output_path:PathBuf = PathBuf::from(OUTPUT_PATH);
     let merged_processed_data:PathBuf = PathBuf::from(MERGED_PROCESSED_DATA);
 
-  //match SPIMIManager::new(
-  //    //std::env::temp_dir().join("SearchGN"),
-  //    output_path.clone(),
-  //    1000000 // no of word store in 1 file
-  //){
-  //    Ok(mut manager) =>{
-  //        let dataset_path:String = format!("{}{}",env!("CARGO_MANIFEST_DIR"), DATASET_PATH);
-  //        if let Err(err) = read_dir( dataset_path, &mut manager){
-  //            println!("{:?}",err);
-  //            return ExitCode::FAILURE;
-  //        }
-  //    },
-  //    Err(er) => {
-  //        println!("Error: {:?}",er);
-  //    }
-  //}
+    match SPIMIManager::new(
+        //std::env::temp_dir().join("SearchGN"),
+        output_path.clone(),
+        1000000 // no of word store in 1 file
+    ){
+        Ok(mut manager) =>{
+            let dataset_path:String = format!("{}{}",env!("CARGO_MANIFEST_DIR"), DATASET_PATH);
+            if let Err(err) = read_dir( dataset_path, &mut manager){
+                println!("{:?}",err);
+                return ExitCode::FAILURE;
+            }
+        },
+        Err(er) => {
+            println!("Error: {:?}",er);
+        }
+    }
 
-    /**
-     * first extract file form tmp/
-     * then mergeit
-     * store in /tmp/final/
-     */
+    let mut merge = MergeManager::new( output_path, merged_processed_data, 1);
+    merge.start_process();
 
-    let _ = MergeManager::new( output_path, merged_processed_data, 2);
-
-  //merger.submit_merge(
-  //    PathBuf::from("./tmp/block_0.idx"),
-  //    PathBuf::from("./tmp/block_1.idx"),
-  //    0,
-  //);
-
-  //merger.submit_merge(
-  //    PathBuf::from("./tmp/block_2.idx"),
-  //    PathBuf::from("./tmp/block_3.idx"),
-  //    1,
-  //);
      //let json = serde_json::to_string(&inverted_idx).unwrap();
     //inverted_idx.print_debugging_details();
 
