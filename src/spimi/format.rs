@@ -1,4 +1,4 @@
-pub const DATASET_PATH: &str = "/dataSet/";
+pub const DATASET_PATH: &str = "/dataSet2/";
 pub const OUTPUT_PATH: &str = "./tmp";
 
 pub const MERGED_PROCESSED_DATA: &str = "./tmp/final/";

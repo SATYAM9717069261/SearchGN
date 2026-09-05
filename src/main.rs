@@ -40,25 +40,25 @@ fn main() -> ExitCode {
         }
     }
 
-    let mut merge = MergeManager::new( output_path, merged_processed_data, 1);
+    let mut merge = MergeManager::new( output_path, merged_processed_data, 3);
     merge.start_process();
 
-     //let json = serde_json::to_string(&inverted_idx).unwrap();
-    //inverted_idx.print_debugging_details();
+    //   let json = serde_json::to_string(&inverted_idx).unwrap();
+    //  inverted_idx.print_debugging_details();
 
-    // loop{
-    //     let mut inp:String = String::new();
-    //     stdin().read_line(&mut inp).expect("IO Error");
-    //     let query = inp.trim().parse::<String>().expect("Parsing Error");
-    //     if query == "exit"{
-    //         break;
-    //     }else{
-    //         let lexer = Lexer::new();
-    //         if let Ok(rtn) = parse_token_to_ast(&lexer.tokenizer(&query)){
-    //             let eval_rtn = evaluate(&rtn,&inverted_idx);
-    //             print_posting_list(&eval_rtn,&inverted_idx);
-    //         }
-    //     }
-    // }
+    loop{
+        let mut inp:String = String::new();
+        stdin().read_line(&mut inp).expect("IO Error");
+        let query = inp.trim().parse::<String>().expect("Parsing Error");
+        if query == "exit"{
+            break;
+        }else{
+            let lexer = Lexer::new();
+            if let Ok(rtn) = parse_token_to_ast(&lexer.tokenizer(&query)){
+                let eval_rtn = evaluate(&rtn,&inverted_idx);
+                print_posting_list(&eval_rtn,&inverted_idx);
+            }
+        }
+    }
     ExitCode::SUCCESS
 }
